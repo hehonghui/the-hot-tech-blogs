@@ -31,7 +31,7 @@ def make_article_list(category, articles):
     # 获得当前工作目录
     print os.getcwd()
 
-    roor_dir = '/Users/mrsimple/Documents/calibre-recipes/the-hot-tech-blogs/'
+    roor_dir = '/books/the-hot-tech-blogs/'
     today=datetime.now()
     print("make_article_list : " + today.strftime('%Y%m%d'))
     try:
