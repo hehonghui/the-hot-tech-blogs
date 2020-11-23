@@ -1,0 +1,181 @@
+# coding=utf-8
+#!/usr/bin/env  python2
+# License: GPLv3 Copyright: 2020, MrSimple
+
+try:
+    from http.cookiejar import Cookie
+except ImportError:
+    from cookielib import Cookie
+import json
+
+from html5_parser import parse
+from lxml import etree
+
+from calibre import replace_entities
+from calibre.ebooks.BeautifulSoup import NavigableString, Tag
+from calibre.utils.cleantext import clean_ascii_chars
+from calibre.web.feeds.news import BasicNewsRecipe
+import urllib
+import urllib2
+import shutil
+from datetime import datetime
+import time
+import os
+
+
+# category 表示分类名, articles 文章列表
+def make_article_list(category, articles):
+    if not articles:
+        return
+
+    # 获得当前工作目录
+    print os.getcwd()
+
+    roor_dir = '/Users/mrsimple/Documents/calibre-recipes/the-hot-tech-blogs/'
+    today=datetime.now()
+    print("make_article_list : " + today.strftime('%Y%m%d'))
+    try:
+        file = open(roor_dir + today.strftime('%Y%m%d') + '/README.md', 'a')
+        file.write("## " + category)
+        file.write("\n")
+
+        for item in articles:
+            title = item.get('title')
+            if not title or title.startswith('-->'):
+                continue
+            file.write("* " + item.get('title') + "\n")
+        file.write("\n")
+        file.close()
+    except IOError:
+        print("Error: 没有找到文件或读取文件失败")
+    else:
+        print(category + "目录写入成功!")
+
+
+class JueJinHotBlogs(BasicNewsRecipe):
+
+    title = '掘金本周热门博客 - Android'
+    description = 'Juejin Hot'
+    index = 'https://juejin.cn/ios?sort=weekly_hottest'
+    cover_url = 'https://img-blog.csdnimg.cn/20201123155543717.png'
+
+    url_prefix = 'https://juejin.cn'
+    no_stylesheets = True
+    extra_css = '''
+        .article-title {
+        	font-size: 1.8rem;
+        }
+        blockquote {
+            display: block;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            margin-inline-start: 40px;
+            margin-inline-end: 40px;
+            background-color: #cccccc;
+	    padding: 10px;
+        }
+
+        pre {
+            background-color: #dddddd;
+            font-family: monospace;
+	    padding: 5px;
+            word-wrap:break-word;
+        }
+
+        .hljs-doctag, .hljs-string {
+    		color: #d14;
+	}
+        .hljs-keyword, .hljs-selector-tag, .hljs-subst {
+    		color: #408090;
+    		font-weight: 700;
+	}
+        .hljs-section, .hljs-selector-id, .hljs-title {
+    		color: #900;
+    		font-weight: 700;
+	}
+        
+        pre > code {
+        	font-size: 12px;
+	}
+            table {
+            align-self: center;
+            margin: 30px 30px 128px 30px;
+            border: 1px;
+            font-family: verdana,arial,sans-serif;
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+        }
+
+        th {
+            font-size: 16pt;
+            border-width: 1px;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #dedede;
+        }
+
+        td {
+            border-width: 1px;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+        }
+
+        .love {
+            font-size: 20pt;
+            color: #D71A1A;
+        }
+
+        span.quote {
+            padding: 15px;
+            display: block;
+            margin: 10px;
+            background-color: #f2f2f2;
+            font-size: 12pt;
+            font-style: italic;
+            color: #666666;
+            border-radius: 3px;
+        }
+    '''
+    remove_tags = [dict(name='span', class_='copy-code-btn')]
+    keep_only_tags = [{ 'class': ['article-content','article-title']}]
+
+    def fetch_hot_blogs(self):
+        post_json = {"id_type":2,"sort_type":7,"cate_id":"6809635626661445640","cursor":"0","limit":20}
+        req = urllib2.Request('https://api.juejin.cn/recommend_api/v1/article/recommend_cate_feed')
+        req.add_header('Content-Type', 'application/json')
+        resp = urllib2.urlopen(req, json.dumps(post_json))
+        raw_json = resp.read()
+        return raw_json
+
+
+    def parse_index(self):
+        articles = []
+        donation = { 'title': '--> 打赏 - Donation', 'url': 'http://economist.cool/donate.html' }
+        articles.append(donation)
+
+        blogs_json  = self.fetch_hot_blogs()
+        blogs_resp = json.loads(blogs_json)
+        if "success" != blogs_resp.get('err_msg') :
+            return
+
+        blogs = blogs_resp.get('data')
+        for link in blogs:
+            info = link.get('article_info')
+            if not info:
+                continue
+
+            post_title = info.get('title')
+            url = self.url_prefix + '/post/' + info.get('article_id')
+            a = { 'title': post_title, 'url': url }
+
+            articles.append(a)
+
+        make_article_list('iOS', articles)
+        ans = [(self.title, articles)]
+        return ans
