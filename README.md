@@ -20,6 +20,13 @@
 
 需要订阅的同学请移步[这里](http://economist.cool/hotblogs.html).
 
+
+> epub阅读效果:
+
+|   目录   |   页面1   |     页面2 |
+|------------|-----------|--------|
+|<img src="https://img-blog.csdnimg.cn/20201124120617114.jpg" width="200"/>| <img src="https://img-blog.csdnimg.cn/20201124120629952.jpg" width="200"/>  | <img src="https://img-blog.csdnimg.cn/20201124120641938.jpg" width="200"/> 
+
 -------------------------------------
 
 ## 二、打赏 - JUST FOR FUN
